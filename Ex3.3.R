@@ -1,75 +1,55 @@
-# Set seed for reproducibility
-set.seed(123)
-
-# Generate a large sample
-sample_size <- 500
-mu <- 0  # true mean
-sigma <- 1  # true standard deviation
-sample <- rnorm(sample_size, mean = mu, sd = sigma)
-
-# Estimate the sample mean and standard deviation
-sample_mean <- mean(sample)
-sample_sd <- sd(sample)
-
-# Compute the 95% confidence interval using z-score
-z <- qnorm(0.975)  # z-score for 97.5th percentile of the normal distribution
-error_margin_z <- z * sample_sd / sqrt(sample_size)
-lower_bound_z <- sample_mean - error_margin_z
-upper_bound_z <- sample_mean + error_margin_z
-
-# Compute the 95% confidence interval using t-test command
-t_test <- t.test(sample, conf.level = 0.95)
-
-# Print the confidence intervals
-cat("95% CI using z-score: [", lower_bound_z, ",", upper_bound_z, "]\n")
-cat("95% CI using t.test: ", t_test$conf.int, "\n")
-
-
-
-# Function to compare average CIs from normal and t methods
-compare_cis_avg <- function(mu, sigma, sample_size, num_iterations=100, seed=123) {
-  # Initialize variables to store the sum of lower and upper bounds
+# Define a function to compare average confidence intervals from normal and t methods over many iterations
+compare_cis_avg <- function(population_mean, population_sd, sample_size, num_iterations=500, confidence_level=0.95, seed=123) {
+  # Initialize variables to store the sum of lower and upper bounds for both methods
   sum_lower_z <- sum_upper_z <- sum_lower_t <- sum_upper_t <- 0
   
   # Set seed for reproducibility
   set.seed(seed)
   
+  # Calculate the z-score for the specified percentile of the normal distribution
+  z_score <- qnorm((1 + confidence_level) / 2)
+  
   for (i in 1:num_iterations) {
     # Generate a sample
-    sample <- rnorm(sample_size, mean = mu, sd = sigma)
+    sample_data <- rnorm(sample_size, mean = population_mean, sd = population_sd)
     
-    # Estimate the sample mean and standard deviation
-    sample_mean <- mean(sample)
-    sample_sd <- sd(sample)
+    # Calculate the sample mean and standard deviation
+    sample_mean <- mean(sample_data)
+    sample_sd <- sd(sample_data)
     
-    # Compute the 95% CI using z-score
-    z <- qnorm(0.975)  # z-score for 97.5th percentile of the normal distribution
-    error_margin_z <- z * sample_sd / sqrt(sample_size)
+    # Compute the CI using z-score
+    error_margin_z <- z_score * sample_sd / sqrt(sample_size)
     lower_bound_z <- sample_mean - error_margin_z
     upper_bound_z <- sample_mean + error_margin_z
     
-    # Compute the 95% CI using t-test command
-    t_test <- t.test(sample, conf.level = 0.95)
+    # Compute the CI using t-test command
+    t_test_result <- t.test(sample_data, conf.level = confidence_level)
     
-    # Update the sum of lower and upper bounds
+    # Add the lower and upper bounds to the sums
     sum_lower_z <- sum_lower_z + lower_bound_z
     sum_upper_z <- sum_upper_z + upper_bound_z
-    sum_lower_t <- sum_lower_t + t_test$conf.int[1]
-    sum_upper_t <- sum_upper_t + t_test$conf.int[2]
+    sum_lower_t <- sum_lower_t + t_test_result$conf.int[1]
+    sum_upper_t <- sum_upper_t + t_test_result$conf.int[2]
   }
   
-  # Calculate the average confidence intervals
+  # Compute the average confidence intervals for both methods
   avg_ci_z <- c(sum_lower_z / num_iterations, sum_upper_z / num_iterations)
   avg_ci_t <- c(sum_lower_t / num_iterations, sum_upper_t / num_iterations)
   
+  # Calculate the difference between the z and t methods
+  ci_difference <- abs(avg_ci_z - avg_ci_t)
+  
   # Print the average confidence intervals
-  cat("Sample size: ", sample_size, ", mu: ", mu, ", sigma: ", sigma, ", iterations: ", num_iterations, "\n")
-  cat("Average 95% CI using z-score: ", avg_ci_z, "\n")
-  cat("Average 95% CI using t.test: ", avg_ci_t, "\n\n")
+  cat("Sample size: ", sample_size, ", mu: ", population_mean, ", sigma: ", population_sd, ", iterations: ", num_iterations, "\n")
+  cat("Average", confidence_level * 100, "% CI using z-score: ", avg_ci_z, "\n")
+  cat("Average", confidence_level * 100, "% CI using t.test: ", avg_ci_t, "\n")
+  cat("Difference between z-score and t-test CIs: ", ci_difference, "\n\n")
 }
 
-# Compare average CIs for different scenarios
-compare_cis_avg(mu=0, sigma=1, sample_size=10000)
-compare_cis_avg(mu=5, sigma=1, sample_size=10000)
-compare_cis_avg(mu=0, sigma=4, sample_size=10000)
+# Use the function to compare average confidence intervals for different scenarios
+compare_cis_avg(population_mean=0, population_sd=1, sample_size=100000)
+compare_cis_avg(population_mean=5, population_sd=1, sample_size=100000)
+compare_cis_avg(population_mean=0, population_sd=4, sample_size=100000)
 
+# Change the confidence level to 0.60 to create a 60% confidence interval
+compare_cis_avg(population_mean=0, population_sd=1, sample_size=100000, confidence_level=0.60)

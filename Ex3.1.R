@@ -1,28 +1,36 @@
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-
+# Required libraries
 library(readxl)
 library(dplyr)
 
-df <- read_excel("rats.xlsx")
+#set working directory to current editor context
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
+# Load the data from the Excel file
+rat_data <- read_excel("rats.xlsx")
 
-# Mean navigation time
-mean_nav_time <- mean(df$Time, na.rm = TRUE)  # 'na.rm = TRUE' removes any missing values before calculation
+# Compute the mean navigation time, excluding missing values
+mean_navigation_time <- mean(rat_data$Time, na.rm = TRUE)
 
-# Standard deviation and sample size
-std_dev <- sd(df$Time)
-sample_size <- length(df$Time)  # Excludes missing values
+# Compute the standard deviation, excluding missing values
+navigation_time_std_dev <- sd(rat_data$Time, na.rm = TRUE)
 
-# 95% Confidence interval
-error_margin <- qt(0.975, df=sample_size-1) * std_dev / sqrt(sample_size)
-lower_bound <- mean_nav_time - error_margin
-upper_bound <- mean_nav_time + error_margin
+# Compute the sample size, excluding missing values
+sample_size <- sum(!is.na(rat_data$Time))
+
+# Compute the error margin for a 95% confidence interval
+error_margin <- qt(0.975, df=sample_size-1) * navigation_time_std_dev / sqrt(sample_size)
+
+# Compute the lower and upper bounds of the 95% confidence interval
+confidence_interval_lower_bound <- mean_navigation_time - error_margin
+confidence_interval_upper_bound <- mean_navigation_time + error_margin
 
 # Output the mean and confidence interval
-mean_nav_time
-lower_bound
-upper_bound
+print(paste0("Mean navigation time: ", mean_navigation_time))
+print(paste0("95% Confidence Interval: [", confidence_interval_lower_bound, ", ", confidence_interval_upper_bound, "]"))
 
+# Perform a two-sided t-test comparing the sample mean to a hypothesized population mean of 60, with a confidence level of 95%
+t_test_result <- t.test(rat_data$Time, mu = 60, alternative = "two.sided", conf.level = 0.95)
 
-t_test <- t.test(df$Time, mu = 60, alternative = "two.sided", conf.level = 0.95)
-t_test
+# Print the t-test results
+print(t_test_result)
+

@@ -1,18 +1,24 @@
-# Mean death count
-mean_death_count <- mean(prussian$y)
+# Load dataset library
+library(pscl)
 
-# Standard deviation and sample size
-std_dev <- sd(prussian$y)
-sample_size <- length(prussian$y)
+# Compute the mean of the death count, excluding missing values
+mean_death_count <- mean(prussian$y, na.rm = TRUE)
 
-# 95% Confidence interval
-error_margin <- qnorm(0.975) * std_dev / sqrt(sample_size)
-lower_bound <- mean_death_count - error_margin
-upper_bound <- mean_death_count + error_margin
+# Compute the standard deviation of the death count, excluding missing values
+death_count_std_dev <- sd(prussian$y, na.rm = TRUE)
 
-# Output the mean and confidence interval
-mean_death_count
-lower_bound
-upper_bound
+# Compute the sample size, excluding missing values
+sample_size <- sum(!is.na(prussian$y))
+
+# Compute the error margin for a 95% confidence interval
+error_margin <- qnorm(0.975) * death_count_std_dev / sqrt(sample_size)
+
+# Compute the lower and upper bounds of the 95% confidence interval
+confidence_interval_lower_bound <- mean_death_count - error_margin
+confidence_interval_upper_bound <- mean_death_count + error_margin
+
+# Print the mean and confidence interval
+print(paste0("Mean death count: ", mean_death_count))
+print(paste0("95% Confidence Interval: [", confidence_interval_lower_bound, ", ", confidence_interval_upper_bound, "]"))
 
 
